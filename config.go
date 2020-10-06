@@ -1,6 +1,6 @@
 package main
 
-var TBToken = "you'er bot token"
+var TBToken = "you bot token"
 
 // 删除骰子等 Dice Emoji
 var DeleteDice = true

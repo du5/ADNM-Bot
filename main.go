@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	tb "gopkg.in/tucnak/telebot.v3"
+	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 var HandlerList []string
