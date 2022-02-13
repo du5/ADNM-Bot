@@ -1,6 +1,8 @@
 package main
 
-var TBToken = "you bot token"
+import "os"
+
+var TBToken = os.Getenv("TB")
 
 // 删除骰子等 Dice Emoji
 var DeleteDice = true
@@ -22,3 +24,6 @@ var DeleteGroupPhotoDeleted = true
 
 // 删除置顶通知
 var DeleteOnPinned = true
+
+// 删除频道消息
+var DeleteChannel = true
