@@ -38,6 +38,9 @@ func main() {
 			_ = b.Leave(m.Chat)
 			return
 		}
+		if ban && m.Sender.ID == 777000 {
+			return
+		}
 		_ = b.Delete(m)
 		if ban {
 			_, _ = b.Raw("banChatSenderChat", map[string]int64{
