@@ -27,3 +27,8 @@ var DeleteOnPinned = true
 
 // 删除频道消息
 var DeleteChannel = true
+
+// 删除 Via 消息
+var DeleteVia = true
+
+var ViaWL = map[string]int{"bnb48_saohua_bot": 0, "XiangPeachBot": 0}

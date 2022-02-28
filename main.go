@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	tb "gopkg.in/tucnak/telebot.v2"
+	tb "gopkg.in/telebot.v3"
 )
 
 var HandlerList []string
@@ -31,51 +31,57 @@ func main() {
 
 	log.Println(fmt.Sprintf("I will delete %s message.", HandlerList))
 
-	dab := func(m *tb.Message, deleteChannel bool) {
-		myRights, _ := b.ChatMemberOf(m.Chat, b.Me)
+	dab := func(c tb.Context, ban bool) error {
+		myRights, _ := b.ChatMemberOf(c.Chat(), b.Me)
 		if !myRights.Rights.CanDeleteMessages || !myRights.Rights.CanRestrictMembers {
-			_, _ = b.Send(m.Chat, "爷权限不足，告辞！")
-			_ = b.Leave(m.Chat)
-			return
+			_ = c.Send("爷权限不足，告辞！")
+			return b.Leave(c.Chat())
 		}
-		if deleteChannel && m.Sender.ID == 777000 {
-			return
+		if ban && c.Sender().ID == 777000 {
+			return nil
 		}
-		_ = b.Delete(m)
-		if deleteChannel {
-			_, _ = b.Raw("banChatSenderChat", map[string]int64{
-				"chat_id":        m.Chat.ID,
-				"sender_chat_id": m.SenderChat.ID,
-			})
+		err := c.Delete()
+		if ban {
+			return b.BanSenderChat(c.Chat(), c.Sender())
 		}
+		return err
 	}
 
 	for i := 0; i < len(HandlerList); i++ {
 		OnEvent := HandlerList[i]
-		b.Handle(OnEvent, func(m *tb.Message) {
-			dab(m, DeleteChannel)
+		b.Handle(OnEvent, func(c tb.Context) error {
+			return dab(c, false)
 		})
 	}
 
-	if DeleteChannel {
-		if b.Poller == nil {
-			panic("telebot: can't start without a poller")
-		}
-		stop := make(chan struct{})
-		go b.Poller.Poll(b, b.Updates, stop)
+	stop := make(chan struct{})
+	stopConfirm := make(chan struct{})
 
-		for {
-			upd := <-b.Updates
-			if upd.Message != nil && upd.Message.SenderChat != nil {
-				dab(upd.Message, DeleteChannel)
-				continue
+	go func() {
+		b.Poller.Poll(b, b.Updates, stop)
+		close(stopConfirm)
+	}()
+
+	for {
+		upd := <-b.Updates
+		M, V, S, W := upd.Message != nil, false, false, true
+		if M {
+			S, V = upd.Message.SenderChat != nil, upd.Message.Via != nil
+			if V {
+				if _, ok := ViaWL[upd.Message.Via.Username]; ok {
+					W = false
+				}
 			}
+		}
+		switch {
+		case M && S && DeleteChannel:
+			_ = dab(b.NewContext(upd), true)
+		case M && V && DeleteVia && W:
+			_ = dab(b.NewContext(upd), false)
+		default:
 			b.ProcessUpdate(upd)
 		}
-	} else {
-		b.Start()
 	}
-
 }
 
 func Config(check bool, handler string) {
