@@ -64,10 +64,10 @@ func main() {
 
 	for {
 		upd := <-b.Updates
-		V, S, W := false, false, true
+		S, W := false, true
 		if upd.Message != nil {
-			S, V = upd.Message.SenderChat != nil, upd.Message.Via != nil
-			if V {
+			S = upd.Message.SenderChat != nil
+			if upd.Message.Via != nil {
 				if _, ok := ViaWL[upd.Message.Via.Username]; ok {
 					W = false
 				}
@@ -76,7 +76,7 @@ func main() {
 		switch {
 		case S && DeleteChannel:
 			_ = dab(b.NewContext(upd), true)
-		case V && DeleteVia && W:
+		case W && DeleteVia:
 			_ = dab(b.NewContext(upd), false)
 		default:
 			b.ProcessUpdate(upd)
