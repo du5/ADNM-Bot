@@ -31,17 +31,20 @@ func main() {
 
 	log.Println(fmt.Sprintf("I will delete %s message.", HandlerList))
 
-	dab := func(c tb.Context, ban bool) error {
-		myRights, _ := b.ChatMemberOf(c.Chat(), b.Me)
+	dab := func(c tb.Context, ban ...bool) (err error) {
+		myRights, err := b.ChatMemberOf(c.Chat(), b.Me)
+		if err != nil {
+			return
+		}
 		if !myRights.Rights.CanDeleteMessages || !myRights.Rights.CanRestrictMembers {
 			_ = c.Send("爷权限不足，告辞！")
 			return b.Leave(c.Chat())
 		}
-		if ban && c.Sender().ID == 777000 {
+		if ban != nil && ban[0] && c.Sender().ID == 777000 {
 			return nil
 		}
-		err := c.Delete()
-		if ban {
+		err = c.Delete()
+		if ban != nil && ban[0] {
 			return b.BanSenderChat(c.Chat(), c.Sender())
 		}
 		return err
@@ -50,7 +53,7 @@ func main() {
 	for i := 0; i < len(HandlerList); i++ {
 		OnEvent := HandlerList[i]
 		b.Handle(OnEvent, func(c tb.Context) error {
-			return dab(c, false)
+			return dab(c)
 		})
 	}
 
@@ -77,7 +80,7 @@ func main() {
 		case S && DeleteChannel:
 			_ = dab(b.NewContext(upd), true)
 		case W && DeleteVia:
-			_ = dab(b.NewContext(upd), false)
+			_ = dab(b.NewContext(upd))
 		default:
 			b.ProcessUpdate(upd)
 		}
