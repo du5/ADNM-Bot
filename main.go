@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -29,9 +28,9 @@ func main() {
 	Config(DeleteGroupPhotoDeleted, tb.OnGroupPhotoDeleted)
 	Config(DeleteOnPinned, tb.OnPinned)
 
-	log.Println(fmt.Sprintf("I will delete %s message.", HandlerList))
+	log.Printf("I will delete %s message.", HandlerList)
 
-	dab := func(c tb.Context, ban ...bool) (err error) {
+	DeleteAndBan := func(c tb.Context, ban ...bool) (err error) {
 		myRights, err := b.ChatMemberOf(c.Chat(), b.Me)
 		if err != nil {
 			return
@@ -41,19 +40,19 @@ func main() {
 			return b.Leave(c.Chat())
 		}
 		if ban != nil && ban[0] && c.Sender().ID == 777000 {
-			return nil
+			return
 		}
 		err = c.Delete()
-		if ban != nil && ban[0] {
+		if ban != nil && ban[0] && c.Message().SenderChat.ID == c.Chat().ID {
 			return b.BanSenderChat(c.Chat(), c.Sender())
 		}
-		return err
+		return
 	}
 
 	for i := 0; i < len(HandlerList); i++ {
 		OnEvent := HandlerList[i]
 		b.Handle(OnEvent, func(c tb.Context) error {
-			return dab(c)
+			return DeleteAndBan(c)
 		})
 	}
 
@@ -67,20 +66,19 @@ func main() {
 
 	for {
 		upd := <-b.Updates
-		S, W := false, true
+		S, V, W := false, false, false
 		if upd.Message != nil {
 			S = upd.Message.SenderChat != nil
-			if upd.Message.Via != nil {
-				if _, ok := ViaWL[upd.Message.Via.Username]; ok {
-					W = false
-				}
+			V = upd.Message.Via != nil
+			if V {
+				_, W = ViaWL[upd.Message.Via.Username]
 			}
 		}
 		switch {
 		case S && DeleteChannel:
-			_ = dab(b.NewContext(upd), true)
-		case W && DeleteVia:
-			_ = dab(b.NewContext(upd))
+			_ = DeleteAndBan(b.NewContext(upd), true)
+		case V && W && DeleteVia:
+			_ = DeleteAndBan(b.NewContext(upd))
 		default:
 			b.ProcessUpdate(upd)
 		}
