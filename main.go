@@ -42,11 +42,11 @@ func main() {
 		if ban != nil && ban[0] && c.Sender().ID == 777000 {
 			return
 		}
-		err = c.Delete()
-		if ban != nil && ban[0] && c.Message().SenderChat.ID == c.Chat().ID {
-			return b.BanSenderChat(c.Chat(), c.Sender())
+
+		if ban != nil && ban[0] && c.Message().SenderChat.ID != c.Chat().ID {
+			_ = b.BanSenderChat(c.Chat(), c.Sender())
 		}
-		return
+		return c.Delete()
 	}
 
 	for i := 0; i < len(HandlerList); i++ {
