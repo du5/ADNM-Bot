@@ -43,9 +43,15 @@ func main() {
 			return
 		}
 
-		if ban != nil && ban[0] && c.Message().SenderChat.ID != c.Chat().ID {
-			_ = b.BanSenderChat(c.Chat(), c.Sender())
+		if c.Message().SenderChat != nil {
+			if c.Message().SenderChat.ID == c.Chat().ID {
+				return
+			}
+			if ban != nil && ban[0] {
+				_ = b.BanSenderChat(c.Chat(), c.Sender())
+			}
 		}
+
 		return c.Delete()
 	}
 
